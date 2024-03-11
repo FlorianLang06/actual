@@ -581,6 +581,13 @@ export async function insertAccount(account) {
     [account.offbudget != null ? account.offbudget : 0],
   );
 
+  //check for duplicated names
+  if (accounts.some(a => a.name.toLowerCase() === account.name.toLowerCase())) {
+    throw new Error(
+      `'insertsAccount' tried to add a account with name '${account.name}' that already exists`,
+    );
+  }
+
   // Don't pass a target in, it will default to appending at the end
   const { sort_order } = shoveSortOrders(accounts);
 
@@ -588,9 +595,20 @@ export async function insertAccount(account) {
   return insertWithUUID('accounts', account);
 }
 
-export function updateAccount(account) {
+export async function updateAccount(account) {
+  const existingAccount = await first(
+    `SELECT id, name, hidden FROM accounts WHERE UPPER(name) = ? AND tombstone = 0 AND ID <> ? LIMIT 1`,
+    [account.name.toUpperCase(), account.id],
+  );
+
+  if (existingAccount) {
+    throw new Error(
+      `'updateAccount' tried to change name of account to '${account.name}' that already exists`,
+    );
+  }
+
   account = accountModel.validate(account, { update: true });
-  return update('accounts', account);
+  return await update('accounts', account);
 }
 
 export function deleteAccount(account) {

@@ -32,7 +32,7 @@ export function CreateLocalAccount({
   const [offbudget, setOffbudget] = useState(false);
   const [balance, setBalance] = useState('0');
 
-  const [nameError, setNameError] = useState(false);
+  const [nameError, setNameError] = useState("");
   const [balanceError, setBalanceError] = useState(false);
 
   const validateBalance = balance => !isNaN(parseFloat(balance));
@@ -45,7 +45,14 @@ export function CreateLocalAccount({
             onSubmit={async event => {
               event.preventDefault();
 
-              const nameError = !name;
+              let nameError = "";
+              if (!name) {
+                nameError = "Name is required"
+              }
+              const accounts = await actions.getAccounts();
+              if (accounts.some(a => a.name.toLowerCase() === name.toLowerCase())) {
+                nameError = `Account with name '${name}' already exists`
+              }
               setNameError(nameError);
 
               const balanceError = !validateBalance(balance);
@@ -72,7 +79,7 @@ export function CreateLocalAccount({
                     const name = event.target.value.trim();
                     setName(name);
                     if (name && nameError) {
-                      setNameError(false);
+                      setNameError("");
                     }
                   }}
                   style={{ flex: 1 }}
@@ -80,7 +87,7 @@ export function CreateLocalAccount({
               </InitialFocus>
             </InlineField>
             {nameError && (
-              <FormError style={{ marginLeft: 75 }}>Name is required</FormError>
+              <FormError style={{ marginLeft: 75 }}>{nameError}</FormError>
             )}
 
             <View
